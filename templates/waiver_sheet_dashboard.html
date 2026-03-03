@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block title %}Waiver Statistical Dashboard{% endblock %}
+{% block content %}
+  <style>
+    .dash-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .dash-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .dash-card .label {
+      color: #6b7280;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    .dash-card .value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .status-legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      padding: 3px 9px;
+      background: #fff;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    @media (max-width: 980px) {
+      .dash-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 640px) {
+      .dash-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <p><a href="{{ back_url }}">Back to sheet</a></p>
+  <h1>Statistical Dashboard</h1>
+  <p class="muted">{{ dashboard_title }}</p>
+
+  <div class="top-actions">
+    <a class="export-link" href="{{ export_url }}">Export Edited Data (.xlsx)</a>
+  </div>
+
+  <div class="dash-grid">
+    {% for item in summary_cards %}
+    <div class="dash-card">
+      <div class="label">{{ item.label }}</div>
+      <div class="value">{{ item.value }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <h2>AI Interpretation</h2>
+    {% for seg in (interpretations.summary or '').split('\n\n') %}
+    <p>{{ seg }}</p>
+    {% endfor %}
+  </div>
+
+  <div class="chart-grid">
+    <div class="card">
+      <h2>Status Distribution</h2>
+      <canvas id="statusChart" height="120"></canvas>
+      <div class="status-legend">
+        <span class="status-chip"><span class="status-dot" style="background:#16a34a;"></span>Fully Paid</span>
+        <span class="status-chip"><span class="status-dot" style="background:#f59e0b;"></span>Partially Paid</span>
+        <span class="status-chip"><span class="status-dot" style="background:#dc2626;"></span>No Payment</span>
+      </div>
+      <div class="interpretation-card">
+        <strong>AI Interpretation</strong>
+        {% for seg in (interpretations.status or '').split('\n\n') %}
+        <p>{{ seg }}</p>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card">
+      <h2>Committee Comments Outcomes</h2>
+      <canvas id="decisionChart" height="120"></canvas>
+      <div class="interpretation-card">
+        <strong>AI Interpretation</strong>
+        {% for seg in (interpretations.decision or '').split('\n\n') %}
+        <p>{{ seg }}</p>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card">
+      <h2>Top Reasons For Waiver</h2>
+      <canvas id="reasonChart" height="120"></canvas>
+      <div class="interpretation-card">
+        <strong>AI Interpretation</strong>
+        {% for seg in (interpretations.reasons or '').split('\n\n') %}
+        <p>{{ seg }}</p>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card">
+      <h2>Financial Components</h2>
+      <canvas id="financialChart" height="120"></canvas>
+      <div class="interpretation-card">
+        <strong>AI Interpretation</strong>
+        {% for seg in (interpretations.financials or '').split('\n\n') %}
+        <p>{{ seg }}</p>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card" style="grid-column: 1 / -1;">
+      <h2>Top Organizations by Outstanding Returns</h2>
+      <canvas id="outstandingChart" height="90"></canvas>
+      <div class="interpretation-card">
+        <strong>AI Interpretation</strong>
+        {% for seg in (interpretations.outstanding or '').split('\n\n') %}
+        <p>{{ seg }}</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Variables Included</h2>
+    <table>
+      <thead><tr><th>Variable</th><th>Detected Column</th></tr></thead>
+      <tbody>
+        <tr><td>Outstanding returns</td><td>{{ key_map.outstanding_returns or '-' }}</td></tr>
+        <tr><td>REASONS FOR WAIVER</td><td>{{ key_map.reason or '-' }}</td></tr>
+        <tr><td>Total Penalty</td><td>{{ key_map.total_penalty or '-' }}</td></tr>
+        <tr><td>Penalty paid</td><td>{{ key_map.penalty_paid or '-' }}</td></tr>
+        <tr><td>COMMITTEE'S COMMENTS</td><td>{{ key_map.comment or '-' }}</td></tr>
+        <tr><td>status</td><td>{{ key_map.status or '-' }}</td></tr>
+        <tr><td>Balance</td><td>{{ key_map.balance or '-' }}</td></tr>
+        <tr><td>Granted Waiver Amount</td><td>{{ key_map.granted_waiver or '-' }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    (function () {
+      const data = {{ chart_data|tojson }};
+      function makeChart(elId, cfg) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        new Chart(el, cfg);
+      }
+
+      makeChart("statusChart", {
+        type: "pie",
+        data: {
+          labels: data.status.labels || [],
+          datasets: [{
+            label: "Rows",
+            data: data.status.values || [],
+            backgroundColor: (data.status.labels || []).map((label) => {
+              const l = String(label || "").trim().toLowerCase();
+              if (l === "fully paid") return "#16a34a";
+              if (l === "partially paid") return "#f59e0b";
+              if (l === "no payment") return "#dc2626";
+              return "#9ca3af";
+            }),
+          }],
+        },
+      });
+
+      makeChart("decisionChart", {
+        type: "doughnut",
+        data: {
+          labels: data.decision.labels || [],
+          datasets: [{ label: "Rows", data: data.decision.values || [] }],
+        },
+      });
+
+      makeChart("reasonChart", {
+        type: "bar",
+        data: {
+          labels: data.reasons.labels || [],
+          datasets: [{ label: "Rows", data: data.reasons.values || [] }],
+        },
+        options: { indexAxis: "y", plugins: { legend: { display: false } } },
+      });
+
+      makeChart("financialChart", {
+        type: "bar",
+        data: {
+          labels: data.financials.labels || [],
+          datasets: [{ label: "Amount", data: data.financials.values || [] }],
+        },
+        options: { plugins: { legend: { display: false } } },
+      });
+
+      makeChart("outstandingChart", {
+        type: "bar",
+        data: {
+          labels: data.outstanding_orgs.labels || [],
+          datasets: [{ label: "Outstanding Returns", data: data.outstanding_orgs.values || [] }],
+        },
+        options: { plugins: { legend: { display: false } } },
+      });
+    })();
+  </script>
+{% endblock %}

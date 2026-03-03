@@ -1,0 +1,202 @@
+PROPRIETARY SOFTWARE LICENSE AGREEMENT
+Confidential | Internal | Commercial Restricted
+
+Copyright © 2026 Joel Harold Onyango
+All Rights Reserved.
+
+1. DEFINITIONS
+
+"Software" means all source code, object code, APIs, algorithms, architecture, databases, documentation, dashboards, AI modules, analytics systems, and related materials developed by Joel Harold Onyango.
+
+"Licensor" means Joel Harold Onyango.
+
+"Licensee" means any authorized individual or entity granted access under written permission.
+
+"Confidential Information" includes the Software and any associated business logic, trade secrets, data models, risk frameworks, regulatory analytics, or technical documentation.
+
+2. OWNERSHIP & INTELLECTUAL PROPERTY
+
+The Software is the exclusive intellectual property of Joel Harold Onyango.
+
+No ownership rights are transferred under this Agreement.
+All rights not expressly granted are reserved.
+
+The Software is protected by copyright law, trade secret law, and applicable intellectual property statutes.
+
+3. CONFIDENTIAL DISTRIBUTION LICENSE
+
+Access to the Software is granted strictly on a confidential basis.
+
+Licensee shall:
+
+Not disclose the Software to any third party.
+
+Not publish the Software publicly.
+
+Not upload the Software to public repositories.
+
+Not share source code, compiled builds, screenshots, architecture, or documentation.
+
+Implement reasonable security measures to prevent unauthorized access.
+
+Any unauthorized disclosure constitutes material breach and may result in legal action.
+
+4. INTERNAL USE ONLY LICENSE
+
+If designated for internal use:
+
+The Software may only be used within Licensee’s organization.
+
+Use is limited to internal operational purposes.
+
+No redistribution, resale, sublicensing, or external hosting is permitted.
+
+Contractors must sign confidentiality agreements before access.
+
+The Software may not be integrated into products offered to third parties without separate written authorization.
+
+5. COMMERCIAL RESTRICTED LICENSE
+
+Commercial use is prohibited unless explicitly authorized in writing.
+
+If commercial rights are granted:
+
+Usage scope will be defined in a separate written addendum.
+
+Revenue-sharing, licensing fees, or subscription fees may apply.
+
+White-labeling, resale, or derivative commercialization requires written approval.
+
+Reverse engineering or derivative commercial platforms are prohibited.
+
+Absent written permission, commercial exploitation is strictly forbidden.
+
+6. PROHIBITED ACTIONS
+
+Licensee shall not:
+
+Copy or reproduce the Software.
+
+Modify or create derivative works.
+
+Reverse engineer, decompile, or disassemble.
+
+Remove copyright notices.
+
+Circumvent security mechanisms.
+
+Use the Software for unlawful purposes.
+
+Train AI systems using the Software without permission.
+
+7. SERVICE LEVEL TERMS (SLA - IF APPLICABLE)
+
+If the Software is provided as hosted SaaS:
+
+Availability target: 95% uptime unless otherwise agreed.
+
+Maintenance windows may occur with reasonable notice.
+
+No guarantee of uninterrupted service.
+
+Licensor is not liable for third-party hosting failures.
+
+Support response times are subject to separate written agreement.
+
+No SLA obligations exist unless expressly agreed in writing.
+
+8. DATA PROTECTION & SECURITY
+
+Licensee is responsible for:
+
+Compliance with local data protection laws.
+
+Secure storage of credentials.
+
+Proper configuration of hosting infrastructure.
+
+Licensor is not liable for data loss due to misconfiguration or unauthorized access by Licensee.
+
+9. TERM & TERMINATION
+
+This license is effective upon access to the Software.
+
+Licensor may terminate immediately if:
+
+Confidentiality is breached.
+
+Unauthorized distribution occurs.
+
+Payment obligations are violated.
+
+Upon termination:
+
+Licensee must delete all copies.
+
+Access credentials must be destroyed.
+
+Continued use constitutes infringement.
+
+10. LIMITATION OF LIABILITY
+
+THE SOFTWARE IS PROVIDED "AS IS."
+
+Licensor disclaims all warranties, express or implied, including:
+
+Merchantability
+
+Fitness for a particular purpose
+
+Non-infringement
+
+Licensor shall not be liable for:
+
+Indirect damages
+
+Regulatory penalties
+
+Business interruption
+
+Loss of profits
+
+Data loss
+
+Maximum liability shall not exceed fees paid (if any) within the preceding 12 months.
+
+11. INDEMNIFICATION
+
+Licensee agrees to indemnify and hold harmless Joel Harold Onyango from any claims arising from:
+
+Misuse of the Software
+
+Regulatory non-compliance
+
+Unauthorized modification
+
+Third-party claims related to Licensee’s deployment
+
+12. GOVERNING LAW
+
+This Agreement shall be governed by the laws of the Republic of Kenya, without regard to conflict of law principles.
+
+Disputes shall be resolved in Kenyan courts unless otherwise agreed in writing.
+
+13. SEVERABILITY
+
+If any provision is found unenforceable, remaining provisions remain in full force.
+
+14. ENTIRE AGREEMENT
+
+This document constitutes the entire agreement unless superseded by a signed written contract.
+
+15. NO IMPLIED LICENSE
+
+Access to the Software does not grant rights beyond those explicitly stated herein.
+
+NOTICE
+
+Unauthorized copying, distribution, disclosure, or commercial exploitation of this Software is strictly prohibited and may result in civil damages and criminal prosecution under applicable intellectual property laws.
+
+Joel Harold Onyango
+Software Author & Intellectual Property Owner
+2026

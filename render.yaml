@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: compliance-app
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w ${WEB_CONCURRENCY:-1} -k gthread --threads ${GUNICORN_THREADS:-8} --timeout ${GUNICORN_TIMEOUT:-90} --bind 0.0.0.0:$PORT app:app
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://database_ecommerce_qbyi_user:DsEXyZQAX912PUJmWTimX4lektz7EciD@dpg-d6g4p5pdrdic73cdrh10-a.singapore-postgres.render.com/database_ecommerce_qbyi
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: GUNICORN_THREADS
+        value: "8"
+      - key: GUNICORN_TIMEOUT
+        value: "90"
+      - key: PERF_SQL_SLOW_MS
+        value: "800"

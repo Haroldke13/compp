@@ -1,0 +1,19 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV RUN_STARTUP_MAINTENANCE=0
+ENV AUTO_SYNC_DEFAULT_WORKBOOKS=0
+ENV AUTO_ENSURE_TEXT_INDEXES=0
+ENV PERF_SQL_SLOW_MS=1200
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["/bin/sh", "-c", "gunicorn -w ${WEB_CONCURRENCY:-1} -k gthread --threads ${GUNICORN_THREADS:-8} --timeout ${GUNICORN_TIMEOUT:-90} --bind 0.0.0.0:${PORT:-5000} app:app"]

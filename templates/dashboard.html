@@ -1,0 +1,678 @@
+{% extends "base.html" %}
+{% block title %}Statistical Dashboard{% endblock %}
+{% block content %}
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .dashboard-grid .card {
+      margin-bottom: 0;
+    }
+    .span-2 {
+      grid-column: span 2;
+    }
+    .interpretation-card {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid #e1e5ea;
+      border-radius: 8px;
+      background: #f7f9fc;
+    }
+    .interpretation-card p {
+      white-space: pre-line;
+    }
+    .chart-wrap.pie-small {
+      width: 50%;
+      min-width: 220px;
+      margin: 0 auto;
+    }
+    .viz-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .viz-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+    .printable-summary {
+      white-space: pre-wrap;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    .print-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal {
+      background: #fff;
+      border-radius: 10px;
+      width: min(1100px, 96vw);
+      max-height: 85vh;
+      overflow: auto;
+      border: 1px solid #e5e7eb;
+      padding: 14px;
+    }
+    .threshold-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .threshold-grid label {
+      font-size: 12px;
+      color: #6b7280;
+      display: block;
+      margin-bottom: 4px;
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body.print-summary-only .container > *:not(.dashboard-grid) {
+        display: none !important;
+      }
+      body.print-summary-only .dashboard-grid > .card {
+        display: none !important;
+      }
+      body.print-summary-only .dashboard-grid > .print-target {
+        display: block !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      body.print-summary-only .dashboard-grid {
+        display: block !important;
+      }
+      .printable-summary {
+        font-size: 12pt;
+      }
+    }
+    @media (max-width: 980px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      .span-2 {
+        grid-column: span 1;
+      }
+      .chart-wrap.pie-small {
+        width: 100%;
+      }
+      .viz-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <p><a href="{{ back_url }}">Back to sheet</a></p>
+  <h1>Statistical Dashboard</h1>
+  <p class="muted">{{ dashboard_title }}</p>
+
+  {% set dyn = payload.dynamic %}
+  {% set overview = dyn.overview %}
+  {% set stats = dyn.stats %}
+  {% set charts = dyn.charts %}
+  {% set quality = dyn.quality %}
+  {% set kpi_targets = payload.kpi_targets %}
+  {% set snapshot_delta = payload.snapshot_delta %}
+  {% set trend_normalized = payload.trend_normalized %}
+  {% set cohort = payload.cohort_summary %}
+  {% set anomalies = payload.anomaly_classification %}
+  {% set mgmt = payload.management_templates %}
+  {% set alerts = payload.alerts %}
+  {% set th = payload.thresholds %}
+
+  <div class="dashboard-grid">
+  <div class="card">
+    <h2>Dataset Overview</h2>
+    <p><strong>Rows:</strong> {{ overview.rows }}</p>
+    <p><strong>Columns:</strong> {{ overview.columns }}</p>
+    <p><strong>Overall completeness:</strong> {{ overview.overall_completeness_pct }}%</p>
+    <p><strong>Numeric fields:</strong> {{ overview.numeric_fields }}</p>
+    <p><strong>Categorical fields:</strong> {{ overview.categorical_fields }}</p>
+    <p><strong>Date fields:</strong> {{ overview.date_fields }}</p>
+    <p><strong>Boolean fields:</strong> {{ overview.boolean_fields }}</p>
+  </div>
+
+  <div class="card">
+    <h2>Auto Insights</h2>
+    {% if dyn.insights %}
+      <ul>
+        {% for insight in dyn.insights %}
+        <li>{{ insight }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No major insights generated yet for this sheet.</p>
+    {% endif %}
+  </div>
+
+  <div class="card span-2">
+    <h2>Alerts</h2>
+    {% if alerts %}
+    <table>
+      <thead><tr><th>Severity</th><th>Alert</th></tr></thead>
+      <tbody>
+        {% for a in alerts %}
+        <tr><td>{{ a.severity|upper }}</td><td>{{ a.message }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No threshold alerts triggered.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Data Quality Score</h2>
+    <p><strong>Score:</strong> {{ quality.score }}/100 (Grade {{ quality.grade }})</p>
+    <p><strong>Completeness:</strong> {{ quality.components.completeness }}%</p>
+    <p><strong>Duplicate rows:</strong> {{ quality.components.duplicate_rows }}%</p>
+    <p><strong>Invalid dates:</strong> {{ quality.components.invalid_dates }}%</p>
+    <p><strong>Numeric outliers:</strong> {{ quality.components.numeric_outliers }}%</p>
+  </div>
+
+  <div class="card">
+    <h2>KPI Target vs Variance</h2>
+    <table>
+      <thead><tr><th>KPI</th><th>Actual</th><th>Target</th><th>Variance</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for row in kpi_targets %}
+        <tr>
+          <td>{{ row.kpi }}</td>
+          <td>{{ row.actual }}</td>
+          <td>{{ row.target }}</td>
+          <td>{{ row.variance }}</td>
+          <td>{{ row.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="interpretation-card" style="margin-top:12px;">
+      <strong>AI Interpretation</strong>
+      <p style="margin:8px 0 0 0;">{{ payload.kpi_target_variance_interpretation }}</p>
+    </div>
+  </div>
+
+  <div class="card span-2">
+    <h2>Alert / Target Thresholds</h2>
+    <p class="muted">Configurable thresholds for this dataset only.</p>
+    <div class="threshold-grid">
+      <div>
+        <label>Late Filing Target (%)</label>
+        <input id="th-late-target" class="cell-input" type="number" step="0.01" value="{{ th.late_filing_target_pct }}">
+      </div>
+      <div>
+        <label>Recovery Target (%)</label>
+        <input id="th-recovery-target" class="cell-input" type="number" step="0.01" value="{{ th.recovery_target_pct }}">
+      </div>
+      <div>
+        <label>Outstanding Target</label>
+        <input id="th-outstanding-target" class="cell-input" type="number" step="0.01" value="{{ th.outstanding_target }}">
+      </div>
+      <div>
+        <label>Avg Processing Target (days)</label>
+        <input id="th-processing-target" class="cell-input" type="number" step="0.01" value="{{ th.avg_processing_target_days }}">
+      </div>
+      <div>
+        <label>Late Filing Alert if &gt; (%)</label>
+        <input id="th-late-alert" class="cell-input" type="number" step="0.01" value="{{ th.late_filing_alert_pct }}">
+      </div>
+      <div>
+        <label>Recovery Alert if &lt; (%)</label>
+        <input id="th-recovery-alert" class="cell-input" type="number" step="0.01" value="{{ th.recovery_alert_pct_min }}">
+      </div>
+      <div>
+        <label>Outstanding Alert if &gt;</label>
+        <input id="th-outstanding-alert" class="cell-input" type="number" step="0.01" value="{{ th.outstanding_alert_max }}">
+      </div>
+      <div>
+        <label>Data Quality Alert if &lt;</label>
+        <input id="th-quality-alert" class="cell-input" type="number" step="0.01" value="{{ th.quality_alert_min }}">
+      </div>
+    </div>
+    <div style="margin-top:10px;">
+      <button type="button" class="save-all-btn" onclick="saveThresholds()">Save Thresholds</button>
+      <span id="threshold-save-status" class="muted" style="margin-left:8px;"></span>
+    </div>
+  </div>
+
+  <div class="card span-2">
+    <h2>Compliance Numeric Summary</h2>
+    <p class="muted">Simplified view of money and count fields for operational review.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Records with value</th>
+          <th>Typical value</th>
+          <th>Total amount</th>
+          <th>Lowest to highest</th>
+          <th>Data quality flag</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in stats.numeric_summary %}
+        <tr>
+          <td>{{ row.label }}</td>
+          <td>{{ row.count }}</td>
+          <td>{{ row.median }}</td>
+          <td>{{ row.sum }}</td>
+          <td>{{ row.min }} to {{ row.max }}</td>
+          <td>
+            {% if row.outliers_iqr > 0 %}
+              {{ row.outliers_iqr }} unusual records - check if they are valid
+            {% else %}
+              No unusual records detected
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="interpretation-card" style="margin-top:12px;">
+      <strong>AI Interpretation</strong>
+      <p style="margin:8px 0 0 0;">{{ payload.compliance_numeric_interpretation }}</p>
+    </div>
+  </div>
+
+  <div id="drilldown-modal-overlay" class="modal-overlay no-print">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <h3 id="drilldown-title" style="margin:0;">Chart Drill-Down</h3>
+        <button type="button" class="delete-btn" onclick="closeDrilldownModal()">Close</button>
+      </div>
+      <p id="drilldown-meta" class="muted"></p>
+      <div class="table-wrap" style="max-height:55vh;">
+        <table id="drilldown-table"></table>
+      </div>
+      <p style="margin-top:10px;">
+        <a id="drilldown-view-link" href="#" target="_blank" rel="noopener">Open full sheet view</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Categorical Statistics</h2>
+    <table>
+      <thead><tr><th>Field</th><th>Unique values</th><th>Top value</th><th>Top count</th></tr></thead>
+      <tbody>
+        {% for row in stats.categorical_summary %}
+        <tr><td>{{ row.label }}</td><td>{{ row.unique_count }}</td><td>{{ row.top_value }}</td><td>{{ row.top_count }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="interpretation-card" style="margin-top:12px;">
+      <strong>AI Interpretation</strong>
+      <p style="margin:8px 0 0 0;">{{ payload.categorical_statistics_interpretation }}</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Date Statistics</h2>
+    <table>
+      <thead><tr><th>Field</th><th>Start</th><th>End</th><th>Span Type</th><th>Span Value</th></tr></thead>
+      <tbody>
+        {% for row in stats.date_summary %}
+        <tr>
+          <td>{{ row.label }}</td>
+          <td>{{ row.start }}</td>
+          <td>{{ row.end }}</td>
+          <td>{{ row.span_label or 'Span (days)' }}</td>
+          <td>{{ row.span_value if row.span_value is not none else row.span_days }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card span-2">
+    <h2>Trend Normalization (MoM / YoY)</h2>
+    {% if trend_normalized %}
+    <table>
+      <thead><tr><th>Period</th><th>Filings</th><th>Late %</th><th>MoM Filings %</th><th>MoM Late Δ (pp)</th><th>YoY Filings %</th><th>YoY Late Δ (pp)</th></tr></thead>
+      <tbody>
+        {% for row in trend_normalized %}
+        <tr>
+          <td>{{ row.period }}</td>
+          <td>{{ row.filings }}</td>
+          <td>{{ row.late_rate_pct }}</td>
+          <td>{{ row.mom_filings_pct if row.mom_filings_pct is not none else '-' }}</td>
+          <td>{{ row.mom_late_rate_pp if row.mom_late_rate_pp is not none else '-' }}</td>
+          <td>{{ row.yoy_filings_pct if row.yoy_filings_pct is not none else '-' }}</td>
+          <td>{{ row.yoy_late_rate_pp if row.yoy_late_rate_pp is not none else '-' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="interpretation-card" style="margin-top:12px;">
+      <strong>AI Interpretation</strong>
+      <p style="margin:8px 0 0 0;">{{ payload.trend_normalized_interpretation }}</p>
+    </div>
+    {% else %}
+    <p class="muted">Not enough year-month periods to compute normalized trends.</p>
+    <div class="interpretation-card" style="margin-top:12px;">
+      <strong>AI Interpretation</strong>
+      <p style="margin:8px 0 0 0;">{{ payload.trend_normalized_interpretation }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Anomaly Classification</h2>
+    {% if anomalies %}
+    <table>
+      <thead><tr><th>Field</th><th>Total Outliers</th><th>Likely Error</th><th>Exceptional Case</th></tr></thead>
+      <tbody>
+        {% for row in anomalies %}
+        <tr><td>{{ row.field }}</td><td>{{ row.outliers }}</td><td>{{ row.likely_error }}</td><td>{{ row.exceptional_case }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No significant numeric anomalies detected.</p>
+    {% endif %}
+    <div class="interpretation-card" style="margin-top:12px;">
+      <strong>AI Interpretation</strong>
+      <p style="margin:8px 0 0 0;">{{ payload.anomaly_classification_interpretation }}</p>
+    </div>
+  </div>
+
+  <div class="card span-2">
+    <h2>Snapshot Delta Reporting</h2>
+    {% if snapshot_delta.available %}
+      {% if snapshot_delta.mode == 'period_sheet' %}
+        <p class="muted">{{ snapshot_delta.reason }}</p>
+        <p class="muted">File: {{ snapshot_delta.file_name }}</p>
+        <p class="muted">
+          Current: <strong>{{ snapshot_delta.current_period }}</strong> ({{ snapshot_delta.current_sheet }})
+          | Previous: <strong>{{ snapshot_delta.previous_period }}</strong> ({{ snapshot_delta.previous_sheet }})
+        </p>
+        <table>
+          <thead><tr><th>KPI</th><th>Current Period</th><th>Previous Period</th><th>Delta</th></tr></thead>
+          <tbody>
+            {% for row in snapshot_delta.rows %}
+            <tr>
+              <td>{{ row.kpi }}</td>
+              <td>{{ row.current }}</td>
+              <td>{{ row.previous }}</td>
+              <td>{{ row.delta }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% elif snapshot_delta.mode == 'timeseries' %}
+        <p class="muted">{{ snapshot_delta.reason }}</p>
+        <p class="muted">File: {{ snapshot_delta.file_name }}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Sheet</th>
+              <th>Late %</th>
+              <th>Recovery %</th>
+              <th>Penalty Paid</th>
+              <th>Outstanding Penalty</th>
+              <th>Requested Waiver</th>
+              <th>Δ Late (pp)</th>
+              <th>Δ Recovery (pp)</th>
+              <th>Δ Penalty Paid</th>
+              <th>Δ Outstanding</th>
+              <th>Δ Requested Waiver</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in snapshot_delta.rows %}
+            <tr {% if row.is_current %}style="background:#ecfeff;"{% endif %}>
+              <td>{{ row.period }}</td>
+              <td>{{ row.sheet_name }}{% if row.is_current %} (current){% endif %}</td>
+              <td>{{ row.late_filing_rate_pct }}</td>
+              <td>{{ row.recovery_rate_pct }}</td>
+              <td>{{ row.total_penalty_paid }}</td>
+              <td>{{ row.total_penalty_outstanding }}</td>
+              <td>{{ row.total_requested_waiver }}</td>
+              <td>{{ row.delta_late_rate_pp if row.delta_late_rate_pp is not none else '-' }}</td>
+              <td>{{ row.delta_recovery_rate_pp if row.delta_recovery_rate_pp is not none else '-' }}</td>
+              <td>{{ row.delta_penalty_paid if row.delta_penalty_paid is not none else '-' }}</td>
+              <td>{{ row.delta_outstanding_penalty if row.delta_outstanding_penalty is not none else '-' }}</td>
+              <td>{{ row.delta_requested_waiver if row.delta_requested_waiver is not none else '-' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="muted">Compared to snapshot {{ snapshot_delta.snapshot_key }} ({{ snapshot_delta.compared_at }}).</p>
+        <table>
+          <thead><tr><th>KPI</th><th>Current</th><th>Previous Snapshot</th><th>Delta</th></tr></thead>
+          <tbody>
+            {% for row in snapshot_delta.rows %}
+            <tr>
+              <td>{{ row.kpi }}</td>
+              <td>{{ row.current }}</td>
+              <td>{{ row.previous }}</td>
+              <td>{{ row.delta }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if snapshot_delta.history_available %}
+        <p class="muted" style="margin-top:10px;">Latest snapshot trend vs older snapshot {{ snapshot_delta.history_snapshot_key }} ({{ snapshot_delta.history_compared_at }}).</p>
+        <table>
+          <thead><tr><th>KPI</th><th>Latest Snapshot</th><th>Older Snapshot</th><th>Delta</th></tr></thead>
+          <tbody>
+            {% for row in snapshot_delta.history_rows %}
+            <tr>
+              <td>{{ row.kpi }}</td>
+              <td>{{ row.latest_snapshot }}</td>
+              <td>{{ row.older_snapshot }}</td>
+              <td>{{ row.delta }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      {% endif %}
+    {% else %}
+      <p class="muted">{{ snapshot_delta.reason }}</p>
+    {% endif %}
+    <div class="interpretation-card" style="margin-top:12px;">
+      <strong>AI Interpretation</strong>
+      <p style="margin:8px 0 0 0;">{{ payload.snapshot_delta_interpretation }}</p>
+    </div>
+  </div>
+
+  <div class="card span-2">
+    <h2>Management Report Templates</h2>
+    <h3>Executive</h3>
+    <p>{{ mgmt.executive }}</p>
+    <h3>Compliance Ops</h3>
+    <p>{{ mgmt.compliance_ops }}</p>
+    <h3>Finance Recovery</h3>
+    <p>{{ mgmt.finance_recovery }}</p>
+  </div>
+
+  <div class="card span-2">
+    <h2>Dynamic Visualizations</h2>
+    {% if charts %}
+      <div class="viz-grid">
+      {% for chart in charts %}
+      <div class="viz-item">
+        <h3 style="margin-top:0;">{{ chart.title }}</h3>
+        <div class="chart-wrap {% if chart.type == 'pie' %}pie-small{% endif %}">
+          <canvas id="{{ chart.id }}" height="85"></canvas>
+        </div>
+        <div class="interpretation-card">
+          <strong>AI Interpretation</strong>
+          <p style="margin: 6px 0 0 0;">{{ chart.interpretation or 'No interpretation generated for this visualization.' }}</p>
+        </div>
+      </div>
+      {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">No charts available for this sheet.</p>
+    {% endif %}
+  </div>
+
+  <div class="card span-2 print-target">
+    <h2>Printable Submission Summary</h2>
+    <p class="muted">Formatted summary for submission to superiors.</p>
+    <pre class="printable-summary">{{ payload.submission_summary }}</pre>
+    <div class="print-actions no-print">
+      <button type="button" class="save-btn" onclick="printSummaryOnly()">Print Summary Only</button>
+      <button type="button" class="create-btn" onclick="printFullPage()">Print Full Page</button>
+      <button type="button" class="save-all-btn" onclick="exportSummaryFormat()">Export Summary (DOCX/PDF)</button>
+    </div>
+  </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    (function () {
+      const aiContext = {{ ai_context|tojson }};
+      const charts = {{ charts | tojson }};
+      const drilldownEndpoint = "/dashboard/drilldown";
+      (charts || []).forEach((chart) => {
+        const el = document.getElementById(chart.id);
+        if (!el) return;
+        const datasets = (chart.datasets || []).map((dataset) => {
+          if ((chart.type || "bar") === "line") {
+            return { ...dataset, fill: false, tension: 0.2 };
+          }
+          return dataset;
+        });
+        new Chart(el, {
+          type: chart.type || "bar",
+          data: { labels: chart.labels || [], datasets: datasets },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: true } },
+            onClick: async (evt, elements) => {
+              if (!chart.drilldown || !elements || !elements.length) return;
+              const idx = elements[0].index;
+              const selectedLabel = (chart.labels || [])[idx];
+              try {
+                const res = await fetch(drilldownEndpoint, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    context: aiContext,
+                    drilldown: chart.drilldown,
+                    label: selectedLabel,
+                    label_index: idx,
+                  }),
+                });
+                const data = await res.json();
+                if (!data.ok) return;
+                openDrilldownModal(chart.title, selectedLabel, data);
+              } catch (e) {}
+            }
+          }
+        });
+      });
+    })();
+
+    function openDrilldownModal(chartTitle, selectedLabel, data) {
+      const overlay = document.getElementById("drilldown-modal-overlay");
+      const title = document.getElementById("drilldown-title");
+      const meta = document.getElementById("drilldown-meta");
+      const table = document.getElementById("drilldown-table");
+      const viewLink = document.getElementById("drilldown-view-link");
+      if (!overlay || !title || !meta || !table || !viewLink) return;
+      const columns = data.columns || [];
+      const rows = data.rows || [];
+      title.textContent = `Chart Drill-Down: ${chartTitle}`;
+      meta.textContent = `Selected: ${selectedLabel} | Matching records: ${data.total}`;
+      let html = "";
+      if (columns.length) {
+        html += "<thead><tr>" + columns.map((c) => `<th>${c}</th>`).join("") + "</tr></thead>";
+        html += "<tbody>";
+        for (const row of rows) {
+          html += "<tr>" + columns.map((c) => `<td>${String(row[c] ?? "")}</td>`).join("") + "</tr>";
+        }
+        html += "</tbody>";
+      } else {
+        html = "<tbody><tr><td>No data found</td></tr></tbody>";
+      }
+      table.innerHTML = html;
+      viewLink.href = data.view_url || "#";
+      overlay.style.display = "flex";
+    }
+
+    function closeDrilldownModal() {
+      const overlay = document.getElementById("drilldown-modal-overlay");
+      if (overlay) overlay.style.display = "none";
+    }
+
+    async function saveThresholds() {
+      const status = document.getElementById("threshold-save-status");
+      const payload = {
+        late_filing_target_pct: parseFloat(document.getElementById("th-late-target").value || "0"),
+        recovery_target_pct: parseFloat(document.getElementById("th-recovery-target").value || "0"),
+        outstanding_target: parseFloat(document.getElementById("th-outstanding-target").value || "0"),
+        avg_processing_target_days: parseFloat(document.getElementById("th-processing-target").value || "0"),
+        late_filing_alert_pct: parseFloat(document.getElementById("th-late-alert").value || "0"),
+        recovery_alert_pct_min: parseFloat(document.getElementById("th-recovery-alert").value || "0"),
+        outstanding_alert_max: parseFloat(document.getElementById("th-outstanding-alert").value || "0"),
+        quality_alert_min: parseFloat(document.getElementById("th-quality-alert").value || "0"),
+      };
+      if (status) status.textContent = "Saving...";
+      try {
+        const res = await fetch("/dashboard/thresholds", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ context: {{ ai_context|tojson }}, thresholds: payload }),
+        });
+        if (!res.ok) throw new Error("save failed");
+        if (status) status.textContent = "Saved. Reloading...";
+        window.location.reload();
+      } catch (e) {
+        if (status) status.textContent = "Save failed.";
+      }
+    }
+
+    function printSummaryOnly() {
+      document.body.classList.add("print-summary-only");
+      window.print();
+      setTimeout(() => {
+        document.body.classList.remove("print-summary-only");
+      }, 100);
+    }
+
+    function printFullPage() {
+      document.body.classList.remove("print-summary-only");
+      window.print();
+    }
+
+    function exportSummaryFormat() {
+      const choice = (window.prompt("Choose export format: type DOCX or PDF", "DOCX") || "").trim().toUpperCase();
+      if (!choice) return;
+      if (choice === "DOCX") {
+        const docxUrl = {{ summary_docx_url|tojson }};
+        if (docxUrl) {
+          window.location.href = docxUrl;
+        }
+        return;
+      }
+      if (choice === "PDF") {
+        printSummaryOnly();
+        return;
+      }
+      alert("Invalid choice. Please enter DOCX or PDF.");
+    }
+  </script>
+{% endblock %}

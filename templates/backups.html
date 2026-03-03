@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Backups{% endblock %}
+{% block content %}
+  <p><a href="{{ url_for('index') }}">Back to workbook list</a></p>
+  <h1>Uploaded Backup Snapshots</h1>
+  <p class="muted">File: {{ file_name }}</p>
+
+  <div class="card">
+    <p class="muted">
+      Restore will replace current sheets for this uploaded file with the selected snapshot.
+      A fresh backup of the current state is taken automatically before restore.
+    </p>
+    {% if backup_groups %}
+    <table>
+      <thead>
+        <tr>
+          <th>Snapshot Key</th>
+          <th>Created At</th>
+          <th>Sheets</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for group in backup_groups %}
+        <tr>
+          <td>{{ group.snapshot_key }}</td>
+          <td>{{ group.created_at }}</td>
+          <td>{{ group.sheets | join(', ') }}</td>
+          <td>
+            <form method="post" action="{{ url_for('restore_uploaded_backup', file_id=file_id, snapshot_key=group.snapshot_key) }}" onsubmit="return confirm('Restore this backup snapshot? Current state will be replaced.');">
+              <button type="submit" class="save-all-btn">Restore Snapshot</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No backups available yet for this file.</p>
+    {% endif %}
+  </div>
+{% endblock %}

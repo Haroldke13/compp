@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+annual_returns.db
+compliance.db
+static/uploads/
+*.log

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Workbook Overview{% endblock %}
+{% block content %}
+  <h1>Workbook Dashboard</h1>
+  {% if refreshed %}
+  <div class="card" style="border-color:#10b981;background:#ecfdf5;">
+    <p style="margin:0;color:#065f46;"><strong>Data refreshed.</strong> Default workbook data has been reloaded from source.</p>
+  </div>
+  {% endif %}
+  <div class="card">
+    <p><strong>Default File:</strong> {{ excel_name }}</p>
+    <p class="muted"><strong>Path:</strong> {{ excel_path }}</p>
+    <p class="muted"><strong>CSV:</strong> {{ csv_path }}</p>
+    <p class="muted"><strong>Database:</strong> {{ db_path }}</p>
+  </div>
+
+  <h2>Sheets</h2>
+  <h3>Default Workbook</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Workbook</th>
+        <th>Sheet Name</th>
+        <th>Rows</th>
+        <th>Columns</th>
+        <th>Open</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sheet in sheets %}
+      <tr>
+        <td>{{ sheet.workbook }}</td>
+        <td>{{ sheet.name }}</td>
+        <td>{{ sheet.rows }}</td>
+        <td>{{ sheet.columns }}</td>
+        <td style="display:flex;gap:8px;align-items:center;">
+          <a href="{{ sheet.open_url }}">View data</a>
+          {% if sheet.workbook == excel_name %}
+          <form method="post" action="{{ url_for('refresh_annual_returns') }}" style="margin:0;">
+            <button type="submit" class="save-all-btn">Refresh data</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+{% endblock %}

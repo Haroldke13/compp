@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ workbook_name }} - {{ sheet_name }}{% endblock %}
+{% block content %}
+  <style>
+    .status-pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+    .status-fully-paid {
+      background: #dcfce7;
+      color: #166534;
+      border-color: #86efac;
+    }
+    .status-partially-paid {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #fcd34d;
+    }
+    .status-no-payment {
+      background: #fee2e2;
+      color: #991b1b;
+      border-color: #fca5a5;
+    }
+    .status-unknown {
+      background: #e5e7eb;
+      color: #374151;
+      border-color: #d1d5db;
+    }
+  </style>
+  <p><a href="{{ url_for('index') }}">Back to workbook list</a></p>
+  <h1>{{ sheet_name }}</h1>
+  <p class="muted">
+    File: {{ workbook_name }} |
+    Showing rows {{ ((page - 1) * per_page) + 1 if total_rows else 0 }} -
+    {{ [page * per_page, total_rows] | min }} of {{ total_rows }}
+  </p>
+  <div class="top-actions">
+    <a class="export-link" href="{{ dashboard_url }}">Statistical Dashboard</a>
+    <a class="export-link" href="{{ export_url }}">Export Edited Data (.xlsx)</a>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          {% for h in headers %}
+          <th>{{ h }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          {% for h in headers %}
+          <td>
+            {% if h|lower == 'status' %}
+              {% set s = (row[h] or '')|string|trim|lower %}
+              {% if s == 'fully paid' %}
+                <span class="status-pill status-fully-paid">{{ row[h] }}</span>
+              {% elif s == 'partially paid' %}
+                <span class="status-pill status-partially-paid">{{ row[h] }}</span>
+              {% elif s == 'no payment' %}
+                <span class="status-pill status-no-payment">{{ row[h] }}</span>
+              {% else %}
+                <span class="status-pill status-unknown">{{ row[h] }}</span>
+              {% endif %}
+            {% else %}
+              {{ row[h] }}
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pager">
+    {% if first_url %}
+    <a href="{{ first_url }}">First</a>
+    {% endif %}
+    {% if prev_url %}
+    <a href="{{ prev_url }}">Previous</a>
+    {% endif %}
+    <span>Page {{ page }} of {{ total_pages }}</span>
+    {% if next_url %}
+    <a href="{{ next_url }}">Next</a>
+    {% endif %}
+    {% if last_url %}
+    <a href="{{ last_url }}">Last</a>
+    {% endif %}
+  </div>
+{% endblock %}

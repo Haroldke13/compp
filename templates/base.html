@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Annual Returns Viewer{% endblock %}</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #f7f9fc;
+        color: #1f2937;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .menu-toggle {
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        z-index: 70;
+        border: 1px solid #111827;
+        background: #111827;
+        color: #ffffff;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 60;
+        display: none;
+      }
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 20vw;
+        min-width: 240px;
+        max-width: 360px;
+        background: #0b1220;
+        color: #ffffff;
+        z-index: 65;
+        transform: translateX(-100%);
+        transition: transform 180ms ease;
+        padding: 22px 16px;
+        box-sizing: border-box;
+        border-right: 1px solid #1f2937;
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .sidebar h3 {
+        margin: 8px 0 16px 0;
+        font-size: 16px;
+        color: #ffffff;
+      }
+      .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .sidebar-section {
+        margin-top: 18px;
+        border-top: 1px solid #1f2937;
+        padding-top: 12px;
+      }
+      .sidebar-section-title {
+        font-size: 12px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin: 0 0 8px 0;
+      }
+      .sidebar-file-title {
+        font-size: 12px;
+        color: #cbd5e1;
+        margin: 8px 0 4px 0;
+        word-break: break-word;
+      }
+      .sidebar-sub-link {
+        color: #ffffff;
+        padding: 6px 10px;
+        border-radius: 6px;
+        display: block;
+        font-size: 13px;
+      }
+      .sidebar-sub-link:hover {
+        background: #1f2937;
+      }
+      .sidebar-sub-link.active {
+        background: #2563eb;
+      }
+      .nav-link {
+        color: #ffffff;
+        font-weight: 600;
+        padding: 8px 10px;
+        border-radius: 6px;
+        display: block;
+      }
+      .nav-link:hover {
+        background: #1f2937;
+      }
+      .nav-link.active {
+        background: #2563eb;
+        color: #ffffff;
+      }
+      h1, h2 {
+        margin-top: 0;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .muted {
+        color: #6b7280;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        background: #fff;
+      }
+      th, td {
+        border: 1px solid #e5e7eb;
+        padding: 8px;
+        text-align: left;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      th {
+        background: #f3f4f6;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      .table-wrap {
+        overflow: auto;
+        max-height: 75vh;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+      .top-scroll {
+        overflow-x: auto;
+        overflow-y: hidden;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #fff;
+        margin-bottom: 8px;
+      }
+      .top-scroll-inner {
+        height: 1px;
+      }
+      a {
+        color: #1d4ed8;
+        text-decoration: none;
+      }
+      .pager {
+        margin-top: 12px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .cell-input,
+      .cell-select {
+        width: 100%;
+        min-width: 140px;
+        box-sizing: border-box;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 12px;
+      }
+      .cell-select[multiple] {
+        min-height: 84px;
+      }
+      .save-btn {
+        border: 1px solid #1d4ed8;
+        background: #1d4ed8;
+        color: #fff;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .delete-btn {
+        border: 1px solid #b91c1c;
+        background: #b91c1c;
+        color: #fff;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .top-actions {
+        margin: 12px 0;
+        display: flex;
+        gap: 10px;
+      }
+      .create-btn {
+        border: 1px solid #047857;
+        background: #047857;
+        color: #fff;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .export-link {
+        border: 1px solid #6b7280;
+        color: #111827;
+        background: #fff;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 13px;
+        display: inline-block;
+      }
+      .save-all-btn {
+        border: 1px solid #0f766e;
+        background: #0f766e;
+        color: #fff;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .global-ai-btn {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 40;
+      }
+      .global-ai-box {
+        position: fixed;
+        right: 20px;
+        bottom: 70px;
+        width: 360px;
+        max-height: 70vh;
+        overflow: auto;
+        z-index: 41;
+        display: none;
+      }
+      @media (max-width: 900px) {
+        .sidebar {
+          width: 80vw;
+          min-width: 0;
+          max-width: 340px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <button id="menu-toggle" class="menu-toggle" type="button">Menu</button>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+    <aside id="sidebar" class="sidebar">
+      <h3>Navigation</h3>
+      <nav class="sidebar-nav">
+        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">Dashboard</a>
+        <a class="nav-link {% if request.endpoint == 'annual_returns_sheet' %}active{% endif %}" href="{{ url_for('annual_returns_sheet', sheet_name='Annual Returns Database') }}">Annual Returns</a>
+        <div class="sidebar-section">
+          <p class="sidebar-section-title">Default Workbooks</p>
+          {% for file in sidebar_default_links %}
+            <p class="sidebar-file-title">{{ file.title }}</p>
+            {% for sheet in file.sheets %}
+              <a class="sidebar-sub-link {% if sheet.active %}active{% endif %}" href="{{ sheet.url }}">
+                {{ sheet.name }}
+              </a>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </nav>
+    </aside>
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+    <button id="global-ai-btn" class="create-btn global-ai-btn" type="button">AI Chat</button>
+    <div id="global-ai-box" class="card global-ai-box">
+      <h3>AI Assistant</h3>
+      <div id="global-ai-messages" class="muted" style="min-height: 80px;"></div>
+      <textarea id="global-ai-question" class="cell-input" rows="4" placeholder="Ask about any dataset (e.g., 'waiver file', 'annual returns', or a sheet name)..."></textarea>
+      <button id="global-ai-send" class="save-btn" type="button">Send</button>
+    </div>
+    <script>
+      (function () {
+        const menuToggle = document.getElementById("menu-toggle");
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebar-overlay");
+        const btn = document.getElementById("global-ai-btn");
+        const box = document.getElementById("global-ai-box");
+        const send = document.getElementById("global-ai-send");
+        const q = document.getElementById("global-ai-question");
+        const out = document.getElementById("global-ai-messages");
+        if (!btn || !box || !send || !q || !out) return;
+
+        const closeSidebar = () => {
+          if (sidebar) sidebar.classList.remove("open");
+          if (overlay) overlay.style.display = "none";
+        };
+        const openSidebar = () => {
+          if (sidebar) sidebar.classList.add("open");
+          if (overlay) overlay.style.display = "block";
+        };
+        if (menuToggle && sidebar && overlay) {
+          menuToggle.addEventListener("click", function () {
+            if (sidebar.classList.contains("open")) {
+              closeSidebar();
+            } else {
+              openSidebar();
+            }
+          });
+          overlay.addEventListener("click", closeSidebar);
+        }
+
+        const pageContext = {{ ai_context|default({}, true)|tojson }};
+        const storageKey = "global_ai_chat_history";
+        const contextKey = "global_ai_chat_context";
+
+        const restore = () => {
+          try {
+            const history = JSON.parse(localStorage.getItem(storageKey) || "[]");
+            if (Array.isArray(history)) {
+              out.innerHTML = history.map((m) => `<p><strong>${m.role}:</strong> ${m.text}</p>`).join("");
+            }
+          } catch (e) {}
+        };
+        const persist = () => {
+          const rows = Array.from(out.querySelectorAll("p")).slice(-40).map((p) => {
+            const text = p.textContent || "";
+            const sep = text.indexOf(":");
+            const role = sep > -1 ? text.slice(0, sep) : "AI";
+            return { role, text: sep > -1 ? text.slice(sep + 1).trim() : text };
+          });
+          localStorage.setItem(storageKey, JSON.stringify(rows));
+        };
+
+        if (pageContext && Object.keys(pageContext).length > 0) {
+          localStorage.setItem(contextKey, JSON.stringify(pageContext));
+        }
+
+        restore();
+        btn.addEventListener("click", function () {
+          box.style.display = box.style.display === "none" ? "block" : "none";
+        });
+
+        send.addEventListener("click", async function () {
+          const question = q.value.trim();
+          if (!question) return;
+          out.innerHTML += "<p><strong>You:</strong> " + question + "</p>";
+          q.value = "";
+          persist();
+          send.disabled = true;
+          try {
+            const context = JSON.parse(localStorage.getItem(contextKey) || "{}");
+            const res = await fetch("/ai/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ question, context }),
+            });
+            const data = await res.json();
+            out.innerHTML += "<p><strong>AI:</strong> " + (data.answer || "No response") + "</p>";
+            persist();
+          } catch (e) {
+            out.innerHTML += "<p><strong>AI:</strong> Request failed.</p>";
+            persist();
+          } finally {
+            send.disabled = false;
+            out.scrollTop = out.scrollHeight;
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
